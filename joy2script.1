@@ -1,0 +1,91 @@
+.TH JOY2SCRIPT 1 "03 June 2008"
+.SH NAME
+joy2script \- perform actions based on joystick events
+.SH SYNOPSIS
+.B joy2script 
+Usage: joy2script 
+       [ -dev {/dev/js0} ]
+       [ -config {.joy2keyrc} ]
+
+note: [] denotes `optional' option or argument,
+      () hints at the wanted arguments for options
+      {} denotes default (compiled-in) parameters
+
+(note: defaults may have been changed by editing joy2script.c)
+.SH DESCRIPTION
+.I joy2script 
+monitors the joystick (normally /dev/js0) and takes action based on the 
+events recieved. The actions are defined in the config file (normally
+/dev/js0). 
+.SS Options
+.TP
+.B -dev
+Specifies joystick device to use.  Defaults /dev/js0 (first joystick)
+.TP
+.B -config
+Specifies the config file to use.
+.SH FILES
+.I /dev/js[01]
+The joystick driver.  Must be installed for joy2key to work.  Joy2key
+only supports versions 1.0+ of the joystick driver.  Older versions of 
+joy2key use the 0.8.0 joystick driver.  If for some reason a 1.0+
+joystick driver does not work for you, use joy2key 1.2.
+.PP
+The Linux joystick driver is available at 
+.P
+http://atrey.karlin.mff.cuni.cz/~vojtech/joystick/
+.P
+.I ~/.joy2script
+joy2script config file.
+.P
+The joy2script homepage is located at:
+
+http://bhrebec.nfshost.com/joy2script
+.P
+.SH CONFIG FILE FORMAT
+Example config file:
+
+axis 0
+action if [ "%n" -gt "0" ]; then xmmsctrl time +2; else xmmsctrl time -1; fi;
+threshold_low 10000
+axis 4
+action xmmsctrl time %n
+action if [ "%n" -gt "0" ]; then xmmsctrl time +2; else xmmsctrl time -1; fi;
+axis 5
+action if [ "%n" -gt "0" ]; then xmmsctrl next; fi; if [ "%n" -lt "0" ]; then xmmsctrl prev; fi;
+threshold_low 200
+button 0
+action ~/scripts/xmms_pause.sh
+.P
+One of 'axis <n>' or 'button <n>' must be specified before any other options in order to select the event affected. 
+Note that <action> can be any valid shell command.
+Within the axis(not the button) <action> string, the following substitutions will be made:
+.HP       
+%u - the raw, unscaled value of the axis
+.HP
+%s - the value of the axis scaled between 0 and 100. Useful for volume control.
+.HP
+%n - the 'sign' of the axis value, that is, -1 if the value is negative, +1 if it is positive
+.P
+Axis options:
+.HP
+	action <action> - the action taken when the axis is moved over threshold_low.
+.HP
+	action_off <action> - the action taken when the axis is moved under the threshold_low.
+.HP
+	repeat_mode <n> - if n is 0 (the default), the action will be repeated every time 
+	a new event with a value over the threshold is received. If n is 1, the 
+	action will only be performed once every time the threshold is crossed.
+
+.P
+Button options:
+.HP
+        action <action> - the action taken when the button is pressed.
+.HP
+        action_off <action> - the action taken when the button is released.
+.P 
+.SH BUGS
+Invalid config file input is ignored, so typos may go unnoticed.
+.SH COPYING
+This is free software under the GNU General Public License.  See COPYING in the archive
+for more information.
