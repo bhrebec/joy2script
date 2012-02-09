@@ -26,10 +26,9 @@ See the sample config in joy2scriptrc.example. For details, see the man page.
 
 TODO
 ----
-1. Make into a daemon
-2. Add a logrithmic mode for axis
-3. Fix a possible signal race caused by me not knowing enough about select()
-4. Add support for different modes
+1. Add a logrithmic mode for axis
+2. Fix a possible signal race caused by me not knowing enough about select()
+3. Add support for different modes
 
 COPYING, LEGAL STUFF 
 --------------------

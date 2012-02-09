@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <ctype.h>
+#include <syslog.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -53,6 +54,7 @@
 int jsfd=-1;
 char numaxes, numbuttons;
 int current_mode=0;
+int daemonize = 1;
 
 struct s_axis {
     char *action_on;
@@ -107,6 +109,7 @@ void button_event(int number, int value);
 int scale_value(int value, int max, int lower, int upper);
 
 int check_config(int argc, char **argv);
+void make_daemon();
 
 int main(int argc, char **argv)
 {
@@ -149,7 +152,15 @@ int main(int argc, char **argv)
     signal(SIGINT, cleanup);
     signal(SIGTERM, cleanup);
 
-    puts("Initialization complete, entering main loop, ^C to exit...");
+    if (daemonize) 
+    {
+        puts("Initialization complete, daemonizing...!\n");
+        make_daemon();
+    }
+    else
+    {
+        puts("Initialization complete, entering main loop, ^C to exit...");
+    }
 
     /* Main Loop */
     for(;;)
@@ -193,6 +204,42 @@ int main(int argc, char **argv)
             repeat_event(&js_fdset);
         }
     }
+}
+
+void make_daemon() {
+    int pid, sid;
+
+    /* Fork off the parent process */
+    pid = fork();
+    if (pid < 0) {
+        exit(EXIT_FAILURE);
+    }
+    /* If we got a good PID, then
+       we can exit the parent process. */
+    if (pid > 0) {
+        exit(EXIT_SUCCESS);
+    }
+
+    /* Change the file mode mask */
+    umask(0);
+
+    /* Create a new SID for the child process */
+    sid = setsid();
+    if (sid < 0) {
+        /* Log the failure */
+        exit(EXIT_FAILURE);
+    }
+
+    /* Change the current working directory */
+    if ((chdir("/")) < 0) {
+        /* Log the failure */
+        exit(EXIT_FAILURE);
+    }
+
+    /* Close out the standard file descriptors */
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
 }
 
 void repeat_event(fd_set *js_fdset) 
@@ -335,8 +382,6 @@ void axis_event(int number, int value)
                 ms = scale_value(axis->value, 32768, 
                         axis->repeat_rate_low, axis->repeat_rate_high);
 
-            //printf("RR: %dms", ms);
-
             int tfd;
             struct itimerspec its;
             struct itimerspec current_its;
@@ -349,13 +394,11 @@ void axis_event(int number, int value)
             {
                 tfd = timerfd_create(CLOCK_MONOTONIC, 0);
                 memset(&current_its, 0, sizeof(current_its));
-                //printf(" - new\n");
             } 
             else 
             {
                 tfd = axis->timer_fd;
                 timerfd_gettime(tfd, &current_its);
-                //printf(" - reusing\n");
             }
 
             /* If the amount of time  is less than
@@ -726,12 +769,15 @@ void process_args(int argc, char **argv)
 			}
 			device=strdup(argv[++i]);
 			continue;
-		}
+		} else if (!strcmp(argv[i], "--no-daemon")) {
+            daemonize = 0;
+        }
 
 		printf("Unknown option %s\n", argv[i]);
 		puts("Usage: joy2script [\"Window Name\"]");
 		printf("\n       [ -dev {%s} ]", DEFAULT_DEVICE);
 		printf("\n       [ -config {%s} ]", DEFAULT_CONFIG_FILE);
+		printf("\n       [ --no-daemon ]");
 
 		puts("\n\nnote: [] denotes `optional' option or argument,");
 		puts("      () hints at the wanted arguments for options");
