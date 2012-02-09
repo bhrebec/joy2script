@@ -5,7 +5,7 @@ joy2script \- perform actions based on joystick events
 .B joy2script 
 Usage: joy2script 
        [ -dev {/dev/js0} ]
-       [ -config {.joy2keyrc} ]
+       [ -config {.joy2scriptrc} ]
 
 note: [] denotes `optional' option or argument,
       () hints at the wanted arguments for options
@@ -16,7 +16,11 @@ note: [] denotes `optional' option or argument,
 .I joy2script 
 monitors the joystick (normally /dev/js0) and takes action based on the 
 events recieved. The actions are defined in the config file (normally
-/dev/js0). 
+~/.joy2scriptrc). 
+.P
+The joy2script homepage is located at:
+
+http://www.brianhrebec.net/joy2script
 .SS Options
 .TP
 .B -dev
@@ -26,66 +30,78 @@ Specifies joystick device to use.  Defaults /dev/js0 (first joystick)
 Specifies the config file to use.
 .SH FILES
 .I /dev/js[01]
-The joystick driver.  Must be installed for joy2key to work.  Joy2key
-only supports versions 1.0+ of the joystick driver.  Older versions of 
-joy2key use the 0.8.0 joystick driver.  If for some reason a 1.0+
-joystick driver does not work for you, use joy2key 1.2.
+The joystick driver.  Must be installed for joy2script to work. 
 .PP
-The Linux joystick driver is available at 
-.P
-http://atrey.karlin.mff.cuni.cz/~vojtech/joystick/
-.P
-.I ~/.joy2script
+.I ~/.joy2scriptrc
 joy2script config file.
-.P
-The joy2script homepage is located at:
-
-http://bhrebec.nfshost.com/joy2script
-.P
 .SH CONFIG FILE FORMAT
-Example config file:
-
-axis 0
-action if [ "%n" -gt "0" ]; then xmmsctrl time +2; else xmmsctrl time -1; fi;
-threshold_low 10000
-axis 4
-action xmmsctrl time %n
-action if [ "%n" -gt "0" ]; then xmmsctrl time +2; else xmmsctrl time -1; fi;
-axis 5
-action if [ "%n" -gt "0" ]; then xmmsctrl next; fi; if [ "%n" -lt "0" ]; then xmmsctrl prev; fi;
-threshold_low 200
-button 0
-action ~/scripts/xmms_pause.sh
+Example:
 .P
-One of 'axis <n>' or 'button <n>' must be specified before any other options in order to select the event affected. 
-Note that <action> can be any valid shell command.
-Within the axis(not the button) <action> string, the following substitutions will be made:
+.br 
+##################
+.P
+[mode 0]
+.br 
+[axis 0]
+.br 
+action_on = echo axis
+.P
+[button 0]
+.br 
+action_on = echo button 0
+.P
+[button 1]
+.br 
+action_on = echo button 1
+.P
+##################
+.P
+
+For a full example, see joy2scriptrc.example
+
+.P
+Note that an action can be any valid shell command.
+Within the axis (but not button) action string, the following substitutions will be made:
 .HP       
-%u - the raw, unscaled value of the axis
+%v - the value of the axis scaled between output_low and output_high.
 .HP
-%s - the value of the axis scaled between 0 and 100. Useful for volume control.
-.HP
-%n - the 'sign' of the axis value, that is, -1 if the value is negative, +1 if it is positive
+%s - the 'sign' of the axis value, that is, -1 if the value is negative, +1 if it is positive
 .P
 Axis options:
 .HP
-	action <action> - the action taken when the axis is moved over threshold_low.
+    action_on = <action> - the action taken when the axis is moved over the deadzone.
 .HP
-	action_off <action> - the action taken when the axis is moved under the threshold_low.
+    action_off = <action> - the action taken when the axis is moved under the deadzone.
 .HP
-	repeat_mode <n> - if n is 0 (the default), the action will be repeated every time 
-	a new event with a value over the threshold is received. If n is 1, the 
-	action will only be performed once every time the threshold is crossed.
-
+    repeat = N  - if n is 0 (the default), the action only occur once over the deadzone. Otherwise, it will repeat according to repeat_rate. If both repeat_rate_low and repeat_rate_high are 0, the action will repeat every time the joystick generates new data.
+.HP
+    repeat_rate_low = N - sets the repeat rate (in milliseconds per action) when the joystick is at 0. Note that this will usually be set higher than repeat_rate_high for intutive behavior.
+.HP
+    repeat_rate_high = N - sets the repeat rate (in milliseconds per action) when the joystick is at (+ or -)32767, or 65536 for asymmetric mode.
+.HP
+    repeat_rate = N - sets repeat_rate_high and repeat_rate_low to the same value.
+.HP
+    asymmetric = 1 - changes the joystick range from -32767-32768 to 0-65536.  Useful for a throttle axis.
+.HP
+        deadzone = N - defaults to 100. Sets the line between off and on.
+.HP
+    deadzone_size = N - defaults to 50. Change the position of the deadzone by half this amont depending on which direction it is being crossed.  Useful to prevent the stick from toggling on and off rapidly near the deadzone.
+.HP
+    output_low = N - default 0. Sets the %v value when the joystick is at 0.
+.HP
+    output_high = N - default 32767. Sets the %v value when the joystick is at maximum value.
+        
 .P
 Button options:
+.HP 
+    action <action> - the action taken when the button is pressed or held.
 .HP
-        action <action> - the action taken when the button is pressed.
+    action_off <action> - the action taken when the button is released.
 .HP
-        action_off <action> - the action taken when the button is released.
+	repeat_rate = N - default 0 (disabled). Sets repeat_rate for the button.
 .P 
 .SH BUGS
-Invalid config file input is ignored, so typos may go unnoticed.
+Probably lots, but nothing specific.
 .SH COPYING
 This is free software under the GNU General Public License.  See COPYING in the archive
 for more information.

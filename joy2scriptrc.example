@@ -1,0 +1,64 @@
+# Joy2script will eventually support multiple modes. Mode 0 should 
+# be placed at the top for future-proofing.
+#
+# This file sets joy2script to control xmms2
+#
+[mode 0]
+
+# First axis, usually horizontal.
+[axis 0]
+
+# Sets the deadzone so we don't accidently seek while doing other things
+deadzone = 8000
+
+# Sets the size of the deadzone
+deadzone_size = 1000
+
+# Sets the action. %s will be replaced by -1 or +1 as appropriate,
+# %v will be replaced by output_high to output_low (see below)
+action_on = if [ "%s" -gt "0" ]; then nyxmms2 seek +%v; else nyxmms2 seek %v; fi;
+
+# Turn on repeat
+repeat = 1
+
+# %v will produce this value close to the center
+output_low = 1
+
+# %v will produce this value far from the center
+output_high = 15
+
+# Sets both low and high for a constant rate
+repeat_rate = 500
+
+# Second axis, usually vertical.
+[axis 1]
+deadzone = 15000
+action_on = if [ "%s" -gt "0" ]; then nyxmms2 next 10; else nyxmms2 prev 10; fi;
+repeat = 1
+
+# These two options will cause the repeat rate to vary
+repeat_rate_low = 1000
+repeat_rate_high = 500
+
+# Throttle - demonstrates asymmetric mode
+[axis 3]
+action_on  = echo ON 
+action_off = echo OFF
+deadzone = 32000
+
+# Make this quite large to act like a switch.
+deadzone_size = 25000
+asymmetric = 1
+
+# Axis 4 and 5 are often hat controls
+[axis 4] action_on = if [ "%s" -gt "0" ]; then nyxmms2 seek +1; else nyxmms2 seek -1; fi;
+
+[axis 5]
+action_on = if [ "%s" -gt "0" ]; then nyxmms2 next; fi; if [ "%s" -lt "0" ]; then nyxmms2 prev; fi;
+
+[button 0]
+action_on = nyxmms2 toggle
+
+[button 1]
+action_on = nyxmms2 stop
+

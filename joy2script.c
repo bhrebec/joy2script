@@ -21,14 +21,14 @@
 
 #include "config.h"
 
-#define JOY2SCRIPT_VERSION                "1.0"
+#define JOY2SCRIPT_VERSION                "2.0"
 
 #define MAX_ACTION_STRING              1024 
 #define DEFAULT_AUTOREPEAT             5
 #define DEFAULT_DEADZONE               100
 #define DEFAULT_DEADZONE_SIZE               50
 #define DEFAULT_DEVICE                 "/dev/input/js0"
-#define DEFAULT_CONFIG_FILE            ".joy2script" /* located in $(HOME) */
+#define DEFAULT_CONFIG_FILE            ".joy2scriptrc" /* located in $(HOME) */
 #define EMAIL                          "brianh32@gmail.com"
 #define MAX_MODES		       16
 
@@ -57,7 +57,6 @@ int current_mode=0;
 struct s_axis {
     char *action_on;
     char *action_off;
-    int threshold;
     int deadzone;
     int deadzone_size;
     int asymmetric;
@@ -87,9 +86,6 @@ struct s_mode {
     struct s_button button[256];
 } mode[MAX_MODES];
 
-int    axis_act_counter=0,
-    button_act_counter=0,
-    thresh_counter=0;
 char *device=DEFAULT_DEVICE, 
     *config_file=DEFAULT_CONFIG_FILE;
 
@@ -618,19 +614,6 @@ void parse_config()
 			fscanf(file, " = %d ", &x);
 			if (parsing_axis)
 				mode[current_mode].axis[current_item].repeat_rate_low=x;
-		}
-		else if (!strcmp(line, "threshold"))
-		{
-			if (current_item == -1)
-			{
-				printf("Error parsing threshold_low: no axis or button given");
-				exit(1);
-			}
-			if (parsing_axis==0)
-				printf("threshold has no meaning for a button");
-			fscanf(file, " = %d", &x);
-			if (parsing_axis)
-				mode[current_mode].axis[current_item].threshold=x;
 		}
 		else if (!strcmp(line, "asymmetric"))
 		{
