@@ -12,11 +12,6 @@
 		The latest version of joy2script can be found at 
 			http://www.brianhrebec.com/joy2script
 
-		Revision History
-		----------------
-        2.0 (3 June 2008) - Added repeat timers, reworked the config file format
-        1.0 (3 June 2008) - First version.
-
 */
 
 #include "config.h"
@@ -113,6 +108,7 @@ void make_daemon();
 
 int main(int argc, char **argv)
 {
+    int i;
     struct js_event js;
     fd_set js_fdset;
     
@@ -124,7 +120,7 @@ int main(int argc, char **argv)
 		   JOY2SCRIPT_VERSION, __DATE__, __TIME__);
 
     memset(mode, 0, sizeof(mode));
-    
+
     argc=check_config(argc, argv);
     process_args(argc, argv);
 
@@ -145,9 +141,12 @@ int main(int argc, char **argv)
 		return 1;
     }
 
-    FD_ZERO(&js_fdset);
+    /* Invalidate all fds */
+    for (i = 0; i < numaxes; i++) 
+        mode[current_mode].axis[i].timer_fd = -1;
 
-    memset(&js, 0, sizeof(struct js_event));
+    for (i = 0; i < numbuttons; i++) 
+        mode[current_mode].button[i].timer_fd = -1;
 
     signal(SIGINT, cleanup);
     signal(SIGTERM, cleanup);
@@ -162,11 +161,11 @@ int main(int argc, char **argv)
         puts("Initialization complete, entering main loop, ^C to exit...");
     }
 
+
     /* Main Loop */
     for(;;)
     {
-        int i;
-
+        FD_ZERO(&js_fdset);
 		memset(&js, 0, sizeof(struct js_event));
 
         /* Add timer fds to set for select() */
@@ -564,7 +563,6 @@ void parse_config()
             mode[current_mode].axis[current_item].deadzone = DEFAULT_DEADZONE;
             mode[current_mode].axis[current_item].deadzone_size = 
                 DEFAULT_DEADZONE_SIZE;
-            mode[current_mode].axis[current_item].timer_fd = -1;
 			parsing_axis=1;
 #if DEBUG
             printf("Found axis: %d\n", current_item);
